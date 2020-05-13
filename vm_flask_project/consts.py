@@ -1,7 +1,7 @@
 from pathlib import Path
 class Consts:
 
-    FILE_TO_LOAD_PATH = Path('data')/'input-2.json'
+    DATA_PATH = Path.cwd() / 'data'
 
     class VMConsts:
         VM_LIST = 'vms'

@@ -18,7 +18,7 @@ class JsonLoadTestCase(unittest.TestCase):
     @patch('vm_flask_project.vm_project.logger.error')
     def test_pass_on_missing_attribute_in_json_file(self, mock_logger):
         try:
-            setup_app(Path.cwd() / 'test_missing_data.json')
+            setup_app(Path(__file__).parent / 'test_missing_data.json')
             self.fail()
         except ValueError:
             pass
@@ -27,7 +27,7 @@ class JsonLoadTestCase(unittest.TestCase):
 
 class BasicTestCase(unittest.TestCase):
     def setUp(self):
-        setup_app(Path.cwd() / 'test.json')
+        setup_app(Path(__file__).parent / 'test.json')
 
     def test_fail_on_non_existing_vm(self):
         tester = app.test_client(self)

@@ -1,7 +1,7 @@
 from pathlib import Path
 class Consts:
 
-    DATA_PATH = Path.cwd() / 'data'
+    DATA_PATH = Path(__file__).parent / 'data'
 
     class VMConsts:
         VM_LIST = 'vms'

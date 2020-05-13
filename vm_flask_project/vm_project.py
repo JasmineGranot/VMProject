@@ -1,3 +1,6 @@
+import sys
+from pathlib import Path
+import pandas as pd
 from flask import Flask, request, jsonify
 import json
 import time
@@ -9,12 +12,8 @@ app = Flask(__name__)
 logger = create_logger("vm-app")
 
 
-def get_json_file_path():
-    return Consts.FILE_TO_LOAD_PATH
-
-
-def setup_app():
-    app.FILE_TO_LOAD_PATH = get_json_file_path()
+def setup_app(file_path):
+    app.FILE_TO_LOAD_PATH = file_path
 
     try:
         with open(app.FILE_TO_LOAD_PATH) as json_file:
@@ -23,10 +22,45 @@ def setup_app():
         logger.error(e)
         raise
     logger.info(f"loaded file from {app.FILE_TO_LOAD_PATH}")
-    app.vm_in_data_list = data.get(Consts.VMConsts.VM_LIST, {})
-    app.fw_rules_in_data_list = data.get(Consts.FWConsts.FW_LIST, {})
+    app.vm_in_data_list, app.fw_rules_in_data_list = _validate_json_file(data)
 
     app.meta = StatsData(len(app.vm_in_data_list))
+
+
+def _validate_json_file(data):
+    logger.info('validating virtual machines in file')
+    if Consts.VMConsts.VM_LIST not in data:
+        logger.warning(f"{Consts.VMConsts.VM_LIST} field was not found in file. Using empty instead.")
+
+    vm_in_data_list = data.get(Consts.VMConsts.VM_LIST, {})
+
+    if _get_is_json_has_missing_val(vm_in_data_list):
+        raise ValueError('virtual machines has missing attributes.')
+
+    logger.info('validating virtual machines in file')
+    if Consts.FWConsts.FW_LIST not in data:
+        logger.warning(f"{Consts.FWConsts.FW_LIST} field was not found in file. Using empty instead.")
+
+    fw_rules_in_data_list = data.get(Consts.FWConsts.FW_LIST, {})
+    if _get_is_json_has_missing_val(fw_rules_in_data_list):
+        raise ValueError('firewall rules has missing attributes.')
+
+    return vm_in_data_list, fw_rules_in_data_list
+
+
+def _get_is_json_has_missing_val(json_data):
+    """
+    :type json_data: a json object
+    return keys as list, ignoring data with miising values
+    """
+    df = pd.DataFrame(json_data)
+    total_len = len(df)
+    df.dropna(inplace=True)
+    new_len = len(df)
+    if total_len > new_len:
+        logger.error('file has missing attributes.')
+        return True
+    return False
 
 
 @app.route('/api/v1/stats', methods=['GET'])
@@ -133,5 +167,7 @@ def _get_tags_set_by_firewall_rules(dst_tags):
 
 
 if __name__ == "__main__":
-    setup_app()
+    json_file = sys.argv[1] if len(sys.argv) > 1 else ''
+    json_file = Consts.DATA_PATH / json_file
+    setup_app(json_file)
     app.run()

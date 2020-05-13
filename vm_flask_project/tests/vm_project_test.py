@@ -6,23 +6,28 @@ from pathlib import Path
 
 class JsonLoadTestCase(unittest.TestCase):
 
-    @patch('vm_flask_project.vm_project.get_json_file_path')
     @patch('vm_flask_project.vm_project.logger.error')
-    def test_fail_on_non_existing_json_file(self, mock_logger, mock_json_path_getter):
-        mock_json_path_getter.return_value = 'unexisting.json'
+    def test_fail_on_non_existing_json_file(self, mock_logger):
         try:
-            setup_app()
+            setup_app(Path.cwd() / 'unexisting.json')
             self.fail()
         except FileNotFoundError:
             pass
         self.assertTrue(mock_logger.called)
 
+    @patch('vm_flask_project.vm_project.logger.error')
+    def test_pass_on_missing_attribute_in_json_file(self, mock_logger):
+        try:
+            setup_app(Path.cwd() / 'test_missing_data.json')
+            self.fail()
+        except ValueError:
+            pass
+        self.assertTrue(mock_logger.called)
+
 
 class BasicTestCase(unittest.TestCase):
-    @patch('vm_flask_project.vm_project.get_json_file_path')
-    def setUp(self, mock_json_path_getter):
-        mock_json_path_getter.return_value = Path('tests') / 'test.json'
-        setup_app()
+    def setUp(self):
+        setup_app(Path.cwd() / 'test.json')
 
     def test_fail_on_non_existing_vm(self):
         tester = app.test_client(self)

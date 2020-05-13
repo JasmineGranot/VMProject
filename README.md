@@ -1,5 +1,7 @@
 # VMProject
- 
+
+Please use the conda envorioment yml.
+
 In order to run, please run the following command from the VMProject Folder:
 ```python -m vm_flask_project.vm_project input-1.json``` 
 
